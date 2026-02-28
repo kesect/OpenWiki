@@ -1,10 +1,13 @@
 import wikipediaapi
 import re
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, quote, urlparse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import uuid
+import requests
 
-wiki_wiki = wikipediaapi.Wikipedia(user_agent="OpenWiki (" +  str(uuid.uuid4()) + ")", language="en", extract_format=wikipediaapi.ExtractFormat.HTML)
+unique = str(uuid.uuid4())
+
+wiki_wiki = wikipediaapi.Wikipedia(user_agent="OpenWiki (" + unique + ")", language="en", extract_format=wikipediaapi.ExtractFormat.HTML)
 
 with open("search.html", "r") as file:
     index = file.read().encode("utf-8")
@@ -22,10 +25,19 @@ class handler(BaseHTTPRequestHandler):
         form_data = parse_qs(post_data.decode("utf-8"))
         
         self.send_response(302)
-        self.send_header("Location", form_data.get("q")[0].lower())
+        self.send_header("Location", form_data.get("q")[0])
         self.end_headers()
         return
     def do_GET(self):
+        if self.path.startswith("/search"):
+            query = quote(urlparse(self.path).query[2:])
+            data = requests.get("https://en.wikipedia.org/w/rest.php/v1/search/title?q=" + query + "&limit=3", headers={"User-Agent": "OpenWiki (" + unique + ")"})
+            self.send_response(data.status_code)
+            self.send_header("Cache-Control", "public, max-age=86400") 
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(data.text.encode("utf-8"))
+            return
         if self.path == "/":
             self.send_response(200)
             self.send_header("Content-Type", "text/html")
@@ -77,5 +89,4 @@ class handler(BaseHTTPRequestHandler):
 
 server_address = ("127.0.0.1", 9827)
 httpd = ThreadingHTTPServer(server_address, handler)
-
 httpd.serve_forever()

@@ -81,22 +81,58 @@ margin: 0 auto;
 margin-top:50px
 }
 }
+
+input::-webkit-calendar-picker-indicator {
+opacity: 0;
+z-index: -1
+}
 </style>
 </head>
 <body>
 <div style="width:700px" class="main">
 <center>
-<h1 style="font-size:7rem;margin:0;margin-bottom:25px">+_+</h1>
+<h1 style="font-size:5rem;margin:0;margin-bottom:25px">OpenWiki</h1>
 </center>
 <form method="POST">
-<input type="text" autofocus required name="q">
+<input type="text" autofocus required list="suggestions" name="q" id="search">
 <center>
-<button style="margin-right:10px" type="submit">Crow Search</button>
+<button style="margin-right:10px" type="submit">Wiki Search</button>
 <button disabled>Donate</button>
 </center>
 </form>
 </div>
 <div>
 </div>
+<datalist id="suggestions"></datalist>
+<script>
+var timer
+const datalist = document.getElementById("suggestions")
+document.getElementById("search").oninput = function(event) {
+for (var option of datalist.options) {
+if (option.value == event.target.value) {
+datalist.innerHTML = ""
+return
+}
+}
+if (event.target.value == "") {
+datalist.innerHTML = ""
+return
+}
+clearTimeout(timer)
+timer = setTimeout(async function() {
+const data = await fetch("search?q=" + encodeURIComponent(event.target.value))
+const json = await data.json()
+datalist.innerHTML = ""
+json.pages.forEach(function(page) {
+const opt = document.createElement("option")
+opt.value = page.title
+if (page.description) {
+opt.label = page.description
+}
+datalist.appendChild(opt)
+})
+}, 150)
+}
+</script>
 </body>
 </html>

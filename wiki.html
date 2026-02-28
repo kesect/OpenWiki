@@ -139,15 +139,21 @@ margin:0px;
 margin-top:10px;
 margin-bottom:10px
 }
+
+input::-webkit-calendar-picker-indicator {
+opacity: 0;
+z-index: -1
+}
+
 </style>
 </head>
 <body>
 <center>
 <a href="/" style="color:white">
-<h3 class="header" style="margin:0;position:fixed;font-size:2rem;top:20px;margin-left:15px;font-family:getrid;font-weight:normal">home</h3>
+<h3 class="header" style="margin:0;position:fixed;font-size:2rem;top:20px;margin-left:15px;font-family:getrid;font-weight:normal">OpenWiki</h3>
 </a>
 <form method="POST">
-<input type="text" name="q" required placeholder="Search OpenWiki...">
+<input type="text" list="suggestions" name="q" required placeholder="Search OpenWiki..." id="search">
 <button type="submit">
 <svg xmlns="http://www.w3.org/2000/svg" height="32px" viewBox="0 -960 960 960" width="32px" fill="lightblue"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>
 </button>
@@ -155,7 +161,7 @@ margin-bottom:10px
 </center>
     
 <div style="margin-left:250px;margin-right:5vw" class="content">
-<div style="position:fixed;left:0;padding-left:20px;display:flex;flex-direction:column;line-height:1.8;width:250px;padding-right:40px" class="info">
+<div style="position:fixed;left:0;padding-left:20px;display:flex;flex-direction:column;line-height:1.8;width:225px" class="info">
 <a href="#TITLE_WIKI_PAGE" style="font-size:1rem">TITLE_WIKI_PAGE</a>
 <div style="display:flex;flex-direction:column;padding-left:10px">
 <!-- SIDEBAR -->
@@ -164,6 +170,36 @@ margin-bottom:10px
 
 <!-- CONTENTS -->
 </div>
+<datalist id="suggestions"></datalist>
+<script>
+var timer
+const datalist = document.getElementById("suggestions")
+document.getElementById("search").oninput = function(event) {
+for (var option of datalist.options) {
+if (option.value == event.target.value) {
+datalist.innerHTML = ""
+return
+}
+}
+if (event.target.value == "") {
+datalist.innerHTML = ""
+return
+}
+clearTimeout(timer)
+timer = setTimeout(async function() {
+const data = await fetch("search?q=" + encodeURIComponent(event.target.value))
+const json = await data.json()
+datalist.innerHTML = ""
+json.pages.forEach(function(page) {
+const opt = document.createElement("option")
+opt.value = page.title
+if (page.description) {
+opt.label = page.description
+}
+datalist.appendChild(opt)
+})
+}, 150)
+}
+</script>
 </body>
 </html>
-

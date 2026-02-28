@@ -63,7 +63,7 @@ class handler(BaseHTTPRequestHandler):
             pathf = self.path.replace("%20", "_")
             if pathf != self.path:
                 self.send_response(302)
-                self.send_header("Location", pathf)
+                self.send_header("Location", pathf[1:])
                 self.end_headers()
                 return
             page_py = wiki_wiki.page(self.path[1:])
@@ -89,4 +89,5 @@ class handler(BaseHTTPRequestHandler):
 
 server_address = ("127.0.0.1", 9827)
 httpd = ThreadingHTTPServer(server_address, handler)
+
 httpd.serve_forever()

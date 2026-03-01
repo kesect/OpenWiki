@@ -1,16 +1,14 @@
-import wikipediaapi
 import re
 from urllib.parse import parse_qs, quote, urlparse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import uuid
 import requests
+from bs4 import BeautifulSoup
 
 unique = str(uuid.uuid4())
 
-wiki_wiki = wikipediaapi.Wikipedia(user_agent="OpenWiki (" + unique + ")", language="en", extract_format=wikipediaapi.ExtractFormat.HTML)
-
 with open("search.html", "r") as file:
-    index = file.read().encode("utf-8")
+    index = file.read().replace("uuid", unique[:8]).encode("utf-8")
 
 with open("wiki.html", "r") as file:
     wiki = file.read()
@@ -66,28 +64,50 @@ class handler(BaseHTTPRequestHandler):
                 self.send_header("Location", pathf[1:])
                 self.end_headers()
                 return
-            page_py = wiki_wiki.page(self.path[1:])
-            if page_py.exists():                
-                fixed = '<h2 id="' + page_py.title + '" style="font-size:2.3rem;margin-bottom:20px">' + page_py.title + '</h2>\n' + page_py.text
-                matches = re.findall(r'<h2>(.*?)<\/h2>', fixed)
-                thestuff = ""
-                for match in matches:
-                    fixed = fixed.replace("<h2>" + match + "</h2>", '<h2 id="' + match.replace(" ", "-").lower() + '">' + match + "</h2>")
-                    thestuff = thestuff + '<a style="color:white;filter:brightness(0.9)" href="#' + match.replace(" ", "-").lower() + '">' + match + '</a>'
-                wiki2 = wiki.replace("TITLE_WIKI_PAGE", page_py.title) # title on sidebar for contents
-                fixed = wiki2.replace("<!-- CONTENTS -->", fixed) # the description
-                fixed = fixed.replace("<!-- SIDEBAR -->", thestuff)
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html")
-                self.end_headers()
-                self.wfile.write(fixed.encode("utf-8"))
-                return
-            else:
+            article = requests.get("https://en.wikipedia.org/w/api.php?action=parse&page=" + self.path[1:] + "&prop=text&format=json", headers={"User-Agent": "OpenWiki (" + unique + ")"}).json()
+            if article.get("error"):
                 self.send_response(404)
                 self.end_headers()
                 return
-
+            soup = BeautifulSoup(article["parse"]["text"]["*"], "html.parser")
+            # check for redirects
+            redirect = soup.find("ul", class_="redirectText")
+            if redirect:
+                self.send_response(302)
+                self.send_header("Location", redirect.find("a", href=True)["href"].split("/")[-1])
+                self.end_headers()
+                return
+            for h2 in soup.find_all("h2"):
+                del h2["id"]
+            for element in soup.find_all(["figure", "table", "img", "svg"]):
+                element.decompose()
+            for element in soup.find_all(class_=["mw-editsection", "portalbox", "side-box", "portal-bar", "thumb", "navbox", "side-box-flex", "barbox", "gallery", "sister-bar"]):
+                element.decompose()
+            for anchor in soup.find_all("a", href=True):
+                print(anchor["href"])
+                if anchor["href"].replace("File:", "") != anchor["href"]:
+                    anchor.decompose()
+                else:
+                    anchor["href"] = anchor["href"].replace("/wiki/", "")
+            for style in soup.find_all("style"):
+                style.string = re.sub(r"url\([^\)]*\)", "", style.string)
+            text = str(soup)
+            title = article["parse"]["title"]
+            fixed = '<h2 id="' + title + '" style="font-size:2.3rem;margin-bottom:20px">' + title + '</h2>\n' + text
+            matches = re.findall(r"<h2>(.*?)<\/h2>", fixed)
+            thestuff = ""
+            for match in matches:
+                fixed = fixed.replace("<h2>" + match + "</h2>", '<h2 id="' + match.replace(" ", "-").lower() + '">' + match + "</h2>")
+                thestuff = thestuff + '<a style="color:white;filter:brightness(0.9);font-size:0.9rem" href="#' + match.replace(" ", "-").lower() + '">' + match + '</a>'
+            wiki2 = wiki.replace("TITLE_WIKI_PAGE", title) # title on sidebar for contents
+            fixed = wiki2.replace("<!-- CONTENTS -->", fixed) # the description
+            fixed = fixed.replace("<!-- SIDEBAR -->", thestuff)
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.end_headers()
+            self.wfile.write(fixed.encode("utf-8"))
+            return
+    
 server_address = ("127.0.0.1", 9827)
 httpd = ThreadingHTTPServer(server_address, handler)
-
 httpd.serve_forever()

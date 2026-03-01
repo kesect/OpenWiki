@@ -64,11 +64,16 @@ class handler(BaseHTTPRequestHandler):
                 self.send_header("Location", pathf[1:])
                 self.end_headers()
                 return
+            if self.path.startswith("/Template+") or self.path.startswith("/Template:"):
+                self.send_response(404)
+                self.end_headers()
+                return
             article = requests.get("https://en.wikipedia.org/w/api.php?action=parse&page=" + self.path[1:].replace("+", ":") + "&prop=text&format=json", headers={"User-Agent": "OpenWiki (" + unique + ")"}).json()
             if article.get("error"):
                 self.send_response(404)
                 self.end_headers()
                 return
+            page_id = str(article["parse"]["pageid"])
             soup = BeautifulSoup(article["parse"]["text"]["*"], "html.parser")
             # check for redirects
             redirect = soup.find("ul", class_="redirectText")
@@ -81,19 +86,22 @@ class handler(BaseHTTPRequestHandler):
                 del h2["id"]
             for element in soup.find_all(["figure", "table", "img", "svg", "form", "checkbox", "input", "button", "hr"]):
                 element.decompose()
-            for element in soup.find_all(class_=["mw-editsection", "portalbox", "side-box", "portal-bar", "thumb", "navbox", "side-box-flex", "barbox", "gallery", "sister-bar"]):
+            for element in soup.find_all(class_=["mw-editsection", "portalbox", "side-box", "portal-bar", "thumb", "navbox", "side-box-flex", "barbox", "gallery", "sister-bar", "mw-empty-elt"]):
                 element.decompose()
             for anchor in soup.find_all("a", href=True):
                 if anchor["href"].replace("File:", "") != anchor["href"]:
                     anchor.decompose()
                 elif anchor["href"].replace("wikipedia.org", "") != anchor["href"]:
                     del anchor["href"]
+                elif anchor.get_text() == "edit":
+                    anchor.decompose()
                 else:
                     anchor["href"] = anchor["href"].replace("/wiki/", "")
                     if not anchor["href"].startswith("http"):
                         anchor["href"] = anchor["href"].replace(":", "+")
             for style in soup.find_all("style"):
                 style.string = re.sub(r"url\([^\)]*\)", "", style.string)
+            description = soup.find("p")
             text = str(soup)
             title = article["parse"]["title"]
             fixed = '<h2 id="' + title + '" style="font-size:2.3rem;margin-bottom:20px">' + title + '</h2>\n' + text
@@ -105,6 +113,12 @@ class handler(BaseHTTPRequestHandler):
             wiki2 = wiki.replace("TITLE_WIKI_PAGE", title) # title on sidebar for contents
             fixed = wiki2.replace("<!-- CONTENTS -->", fixed) # the description
             fixed = fixed.replace("<!-- SIDEBAR -->", thestuff)
+            if description:
+                for sup in description.find_all("sup"):
+                    sup.decompose()
+                fixed = fixed.replace("DESCRIPTION_WIKI_PAGE", description.get_text())
+            else:
+                fixed = fixed.replace("DESCRIPTION_WIKI_PAGE", "No description available.")
             self.send_response(200)
             self.send_header("Content-Type", "text/html")
             self.end_headers()

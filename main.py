@@ -64,7 +64,7 @@ class handler(BaseHTTPRequestHandler):
                 self.send_header("Location", pathf[1:])
                 self.end_headers()
                 return
-            article = requests.get("https://en.wikipedia.org/w/api.php?action=parse&page=" + self.path[1:] + "&prop=text&format=json", headers={"User-Agent": "OpenWiki (" + unique + ")"}).json()
+            article = requests.get("https://en.wikipedia.org/w/api.php?action=parse&page=" + self.path[1:].replace("+", ":") + "&prop=text&format=json", headers={"User-Agent": "OpenWiki (" + unique + ")"}).json()
             if article.get("error"):
                 self.send_response(404)
                 self.end_headers()
@@ -79,15 +79,17 @@ class handler(BaseHTTPRequestHandler):
                 return
             for h2 in soup.find_all("h2"):
                 del h2["id"]
-            for element in soup.find_all(["figure", "table", "img", "svg"]):
+            for element in soup.find_all(["figure", "table", "img", "svg", "form", "checkbox", "input", "button", "hr"]):
                 element.decompose()
             for element in soup.find_all(class_=["mw-editsection", "portalbox", "side-box", "portal-bar", "thumb", "navbox", "side-box-flex", "barbox", "gallery", "sister-bar"]):
                 element.decompose()
             for anchor in soup.find_all("a", href=True):
                 if anchor["href"].replace("File:", "") != anchor["href"]:
                     anchor.decompose()
+                elif anchor["href"].replace("wikipedia.org", "") != anchor["href"]:
+                    del anchor["href"]
                 else:
-                    anchor["href"] = anchor["href"].replace("/wiki/", "")
+                    anchor["href"] = anchor["href"].replace("/wiki/", "").replace(":", "+")
             for style in soup.find_all("style"):
                 style.string = re.sub(r"url\([^\)]*\)", "", style.string)
             text = str(soup)

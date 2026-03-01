@@ -5,11 +5,12 @@ import uuid
 import requests
 from bs4 import BeautifulSoup
 import html
+from minify_html import minify
 
 unique = str(uuid.uuid4())
 
 with open("search.html", "r") as file:
-    index = file.read().replace("uuid", unique[:8]).encode("utf-8")
+    index = minify(file.read().replace("uuid", unique[:8]), minify_js=True, minify_css=True).encode("utf-8")
 
 with open("wiki.html", "r") as file:
     wiki = file.read()
@@ -123,7 +124,7 @@ class handler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", "text/html")
             self.end_headers()
-            self.wfile.write(fixed.encode("utf-8"))
+            self.wfile.write(minify(fixed, minify_js=True, minify_css=True).encode("utf-8"))
             return
     
 server_address = ("127.0.0.1", 9827)

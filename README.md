@@ -6,7 +6,7 @@
 ```
 git clone https://github.com/kesect/OpenWiki
 cd OpenWiki
-pip install -r requirements.txt
+pip install -r requirements.txt --break-system-packages
 ```
 
 ## Usage

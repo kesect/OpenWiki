@@ -84,7 +84,6 @@ class handler(BaseHTTPRequestHandler):
             for element in soup.find_all(class_=["mw-editsection", "portalbox", "side-box", "portal-bar", "thumb", "navbox", "side-box-flex", "barbox", "gallery", "sister-bar"]):
                 element.decompose()
             for anchor in soup.find_all("a", href=True):
-                print(anchor["href"])
                 if anchor["href"].replace("File:", "") != anchor["href"]:
                     anchor.decompose()
                 else:

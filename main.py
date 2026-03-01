@@ -89,7 +89,9 @@ class handler(BaseHTTPRequestHandler):
                 elif anchor["href"].replace("wikipedia.org", "") != anchor["href"]:
                     del anchor["href"]
                 else:
-                    anchor["href"] = anchor["href"].replace("/wiki/", "").replace(":", "+")
+                    anchor["href"] = anchor["href"].replace("/wiki/", "")
+                    if not anchor["href"].startswith("http"):
+                        anchor["href"] = anchor["href"].replace(":", "+")
             for style in soup.find_all("style"):
                 style.string = re.sub(r"url\([^\)]*\)", "", style.string)
             text = str(soup)

@@ -4,6 +4,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import uuid
 import requests
 from bs4 import BeautifulSoup
+import html
 
 unique = str(uuid.uuid4())
 
@@ -110,13 +111,13 @@ class handler(BaseHTTPRequestHandler):
             for match in matches:
                 fixed = fixed.replace("<h2>" + match + "</h2>", '<h2 id="' + match.replace(" ", "-").lower() + '">' + match + "</h2>")
                 thestuff = thestuff + '<a style="color:white;filter:brightness(0.9);font-size:0.9rem" href="#' + match.replace(" ", "-").lower() + '">' + match + '</a>'
-            wiki2 = wiki.replace("TITLE_WIKI_PAGE", title) # title on sidebar for contents
+            wiki2 = wiki.replace("TITLE_WIKI_PAGE", html.escape(title)) # title on sidebar for contents
             fixed = wiki2.replace("<!-- CONTENTS -->", fixed) # the description
             fixed = fixed.replace("<!-- SIDEBAR -->", thestuff)
             if description:
                 for sup in description.find_all("sup"):
                     sup.decompose()
-                fixed = fixed.replace("DESCRIPTION_WIKI_PAGE", description.get_text())
+                fixed = fixed.replace("DESCRIPTION_WIKI_PAGE", html.escape(description.get_text()))
             else:
                 fixed = fixed.replace("DESCRIPTION_WIKI_PAGE", "No description available.")
             self.send_response(200)

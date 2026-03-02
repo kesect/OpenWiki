@@ -12,4 +12,4 @@ pip install -r requirements.txt --break-system-packages
 ## Usage
 All you have to run is ```python main.py``` or on some systems ```python3 main.py``` to start up OpenWiki.
 
-Then visit ```http://localhost:9827``` through your web browser and your all done.
+Then visit ```http://localhost:9827``` through your web browser and your all done!

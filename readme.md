@@ -1,7 +1,10 @@
 # OpenWiki
 ![Screenshot of OpenWiki](media/openwiki.avif)
-**OpenWiki** is a lightweight, open source alternative frontend for Wikipedia designed to bypass censorship. There is no tracking or cookies and Javascript is not required, You should put it behind a reverse proxy on a obscene path.
+**OpenWiki** is a lightweight, open source alternative frontend for [Wikipedia](https://wikipedia.org) designed to evade censorship. There is no tracking or cookies and Javascript is not required.
 
+![warning]
+You should put OpenWiki behind a reverse proxy (such as nginx, apache, etc) on a obscene path.
+ 
 ## Installation
 ```
 git clone https://github.com/kesect/OpenWiki

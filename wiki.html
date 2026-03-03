@@ -15,6 +15,10 @@ font-weight: 300 900;
 src: url(rubik.woff2) format(woff2)
 }
 
+span {
+color: #f1f1f1 !important
+}
+
 body {
 opacity: 0.9;
 font-family: Rubik;
@@ -71,7 +75,8 @@ font-family: Rubik;
 background-color: #4b6675;
 color: lightblue;
 transition: 0.2s ease;
-cursor: pointer
+cursor: pointer;
+margin-left:5px
 }
 
 .icon {
@@ -100,7 +105,7 @@ font-size: 1.1rem;
 transition: 0.2s ease;
 padding-left: 20px;
 width: 100%;
-box-sizing: border-box;
+box-sizing: border-box
 }
 input:focus {
 background: #303030;
@@ -157,10 +162,10 @@ background-color: #121212 !important
 <body>
 <center>
 <a href="/" style="color:white">
-<h3 class="header" style="margin:0;position:fixed;font-size:2rem;top:20px;margin-left:15px;font-family:getrid;font-weight:normal">OpenWiki</h3>
+<h3 class="header" style="margin:0;position:fixed;font-size:2rem;top:20px;margin-left:15px;font-family:getrid;font-weight:normal">TRANSLATE_1</h3>
 </a>
 <form method="POST">
-<input type="text" list="suggestions" name="q" required placeholder="Search OpenWiki..." id="search" autocomplete="off">
+<input type="text" list="suggestions" name="q" required placeholder="TRANSLATE_2" id="search" autocomplete="off">
 <button type="submit">
 <svg xmlns="http://www.w3.org/2000/svg" height="32px" viewBox="0 -960 960 960" width="32px" fill="lightblue"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>
 </button>

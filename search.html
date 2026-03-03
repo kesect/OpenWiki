@@ -2,6 +2,7 @@
 <html style="color-scheme:dark">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
 <style>
 @font-face {
 font-family: Rubik;
@@ -21,30 +22,6 @@ align-items: center;
 height: 100vh;
 padding: 0;
 margin: 0 auto;
-}
-
-button {
-padding-left: 30px;
-padding-right: 30px;
-height: 60px;
-width: auto;
-border: none;
-border-radius: 20px;
-font-size: 1.5rem;
-font-family: Rubik;
-background-color: #4b6675;
-color: lightblue;
-transition: 0.2s ease;
-cursor: pointer
-}
-
-button:hover {
-filter: brightness(0.9)
-}
-
-button:active {
-filter: brightness(1.05);
-border-radius: 28px
 }
 
 input {
@@ -106,21 +83,50 @@ background: #376681
 }
 
 * {
-	user-select: none
+user-select: none
 }
+
+.random {
+padding-left: 30px;
+padding-right: 30px;
+height: 60px;
+width: auto;
+border: none;
+border-radius: 20px;
+font-size: 1.5rem;
+font-family: Rubik;
+background-color: #4b6675;
+color: lightblue;
+text-decoration: none;
+display: inline-block;
+transition: 0.2s ease;
+cursor: pointer;
+text-align: center;
+line-height: 60px
+}
+
+.random:hover {
+filter: brightness(0.9)
+}
+
+.random:active {
+filter: brightness(1.05);
+border-radius: 28px
+}
+
 </style>
 </head>
 <body>
-<footer style="user-select:text">OpenWiki (uuid)</footer>
+<footer style="user-select:text">TRANSLATE_1 (uuid)</footer>
 <div style="width:700px" class="main">
 <center>
-<h1 style="font-size:5rem;margin:0;margin-bottom:25px;user-select:text">OpenWiki</h1>
+<h1 style="font-size:5rem;margin:0;margin-bottom:25px;user-select:text">TRANSLATE_1</h1>
 </center>
 <form method="POST">
 <input type="text" autofocus required list="suggestions" name="q" id="search" autocomplete="off">
 <center>
-<button style="margin-right:10px" type="submit">Wiki Search</button>
-<button disabled>Donate</button>
+<button class="random" style="margin-right:10px" type="submit">TRANSLATE_3</button>
+<a draggable="false" href="search" class="random">TRANSLATE_4</a>
 </center>
 </form>
 </div>

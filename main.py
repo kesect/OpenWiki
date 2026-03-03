@@ -6,18 +6,19 @@ import requests
 from bs4 import BeautifulSoup
 import html
 from minify_html import minify
+from translations import languages
 
 unique = str(uuid.uuid4())
 
 with open("search.html", "r") as file:
-    index = minify(file.read().replace("uuid", unique[:8]), minify_js=True, minify_css=True).encode("utf-8")
+    index = minify(file.read().replace("uuid", unique[:8]), minify_js=True, minify_css=True)
 
 with open("wiki.html", "r") as file:
     wiki = file.read()
     
 with open("rubik.woff2", "rb") as file:
     rubik = file.read()
-    
+        
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         content_length = int(self.headers["Content-Length"])
@@ -29,11 +30,32 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
         return
     def do_GET(self):
+        lang = "en"
+        if self.headers.get("accept-language"):
+            accepted = self.headers["accept-language"]
+            accepted = accepted.split(';')[0]
+            accepted = accepted.split(',')
+            for alang in accepted:
+                alang = alang.split('-')[0]
+                alang = alang.lower()
+                if alang in languages:
+                    lang = alang
+                    break
+        if self.path == "/search":
+            data = requests.get("https://" + lang + ".wikipedia.org/w/api.php?action=query&format=json&list=random&rnlimit=1&rnnamespace=0", headers={"User-Agent": "OpenWiki (" + unique + ")"}).json()
+            if data.get("error"):
+                self.send_response(404)
+                self.end_headers()
+                return
+            self.send_response(302)
+            self.send_header("Location", quote(data["query"]["random"][0]["title"]))
+            self.end_headers()
+            return
         if self.path.startswith("/search"):
             query = quote(urlparse(self.path).query[2:])
-            data = requests.get("https://en.wikipedia.org/w/rest.php/v1/search/title?q=" + query + "&limit=3", headers={"User-Agent": "OpenWiki (" + unique + ")"})
+            data = requests.get("https://" + lang + ".wikipedia.org/w/rest.php/v1/search/title?q=" + query + "&limit=3", headers={"User-Agent": "OpenWiki (" + unique + ")"})
             self.send_response(data.status_code)
-            self.send_header("Cache-Control", "public, max-age=86400") 
+            self.send_header("Cache-Control", "no-cache") 
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(data.text.encode("utf-8"))
@@ -42,7 +64,10 @@ class handler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", "text/html")
             self.end_headers()
-            self.wfile.write(index)
+            index2 = index.replace("TRANSLATE_1", languages[lang][0])
+            index2 = index2.replace("TRANSLATE_3", languages[lang][2])
+            index2 = index2.replace("TRANSLATE_4", languages[lang][3])
+            self.wfile.write(index2.encode("utf-8"))
             return
         elif self.path == "/rubik.woff2":
             self.send_response(200)
@@ -70,7 +95,7 @@ class handler(BaseHTTPRequestHandler):
                 self.send_response(404)
                 self.end_headers()
                 return
-            article = requests.get("https://en.wikipedia.org/w/api.php?action=parse&page=" + self.path[1:].replace("+", ":") + "&prop=text&format=json", headers={"User-Agent": "OpenWiki (" + unique + ")"}).json()
+            article = requests.get("https://" + lang + ".wikipedia.org/w/api.php?action=parse&page=" + self.path[1:].replace("+", ":") + "&prop=text&format=json", headers={"User-Agent": "OpenWiki (" + unique + ")"}).json()
             if article.get("error"):
                 self.send_response(404)
                 self.end_headers()
@@ -84,11 +109,11 @@ class handler(BaseHTTPRequestHandler):
                 self.send_header("Location", redirect.find("a", href=True)["href"].split("/")[-1])
                 self.end_headers()
                 return
-            for h2 in soup.find_all("h2"):
-                del h2["id"]
+            #for h2 in soup.find_all("h2"):
+                #del h2["id"]
             for element in soup.find_all(["figure", "table", "img", "svg", "form", "checkbox", "input", "button", "hr"]):
                 element.decompose()
-            for element in soup.find_all(class_=["mw-editsection", "portalbox", "side-box", "portal-bar", "thumb", "navbox", "side-box-flex", "barbox", "gallery", "sister-bar", "mw-empty-elt"]):
+            for element in soup.find_all(class_=["mw-editsection", "portalbox", "side-box", "portal-bar", "thumb", "navbox", "side-box-flex", "barbox", "gallery", "sister-bar", "mw-empty-elt", "noprint"]):
                 element.decompose()
             for anchor in soup.find_all("a", href=True):
                 if anchor["href"].replace("File:", "") != anchor["href"]:
@@ -107,14 +132,16 @@ class handler(BaseHTTPRequestHandler):
             text = str(soup)
             title = article["parse"]["title"]
             fixed = '<h2 id="' + title + '" style="font-size:2.3rem;margin-bottom:20px">' + title + '</h2>\n' + text
-            matches = re.findall(r"<h2>(.*?)<\/h2>", fixed)
+            
             thestuff = ""
-            for match in matches:
-                fixed = fixed.replace("<h2>" + match + "</h2>", '<h2 id="' + match.replace(" ", "-").lower() + '">' + match + "</h2>")
-                thestuff = thestuff + '<a style="color:white;filter:brightness(0.9);font-size:0.9rem" href="#' + match.replace(" ", "-").lower() + '">' + match + '</a>'
+            for h2 in soup.find_all("h2", id=True):   
+                #fixed = fixed.replace("<h2>" + h2.get_text() + "</h2>", '<h2 id="' + match.replace(" ", "-").lower() + '">' + match + "</h2>")
+                thestuff = thestuff + '<a style="color:white;filter:brightness(0.9);font-size:0.9rem" href="#' + h2["id"] + '">' + h2.get_text() + '</a>'
             wiki2 = wiki.replace("TITLE_WIKI_PAGE", html.escape(title)) # title on sidebar for contents
             fixed = wiki2.replace("<!-- CONTENTS -->", fixed) # the description
             fixed = fixed.replace("<!-- SIDEBAR -->", thestuff)
+            fixed = fixed.replace("TRANSLATE_1", languages[lang][0])
+            fixed = fixed.replace("TRANSLATE_2", languages[lang][1])
             if description:
                 for sup in description.find_all("sup"):
                     sup.decompose()
@@ -126,7 +153,7 @@ class handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(minify(fixed, minify_js=True, minify_css=True).encode("utf-8"))
             return
-    
+            
 server_address = ("127.0.0.1", 9827)
 httpd = ThreadingHTTPServer(server_address, handler)
 httpd.serve_forever()

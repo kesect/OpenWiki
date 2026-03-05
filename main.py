@@ -1,3 +1,12 @@
+import datetime
+import time
+
+def log(s, typ="log"):
+   print(str(datetime.datetime.now()) + " [" + typ + "] " + s) 
+   
+log("starting up")
+started = time.time()
+
 import re
 from urllib.parse import parse_qs, quote, urlparse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -7,6 +16,7 @@ from bs4 import BeautifulSoup
 import html
 from minify_html import minify
 from translations import languages
+import time
 
 unique = str(uuid.uuid4())
 
@@ -18,7 +28,31 @@ with open("wiki.html", "r") as file:
     
 with open("rubik.woff2", "rb") as file:
     rubik = file.read()
-        
+    
+m = 0
+c = 0
+v = ""
+
+log("querying wikipedia (this could take a while)")
+    
+for lang in languages:
+    m = m + 1
+    try:
+        if requests.get("https://" + str(lang) + ".wikipedia.org/api/rest_v1/page/", headers={"User-Agent": "OpenWiki (" + unique + ")"}).status_code == 200:
+            c = c + 1
+            v = str(lang)
+    except requests.exceptions.RequestException:
+        pass
+    
+if c == 0:  
+    log("wikipedia is being fully filtered either by your isp or firewall.", "fatal")
+    raise SystemExit
+elif c != m:
+    log("wikipedia is being [partially] filtered wither by your isp or firewall", "warn")
+    
+log("queried " + str(m) + " wikipedia servers of which " + str(c) + " responded")
+
+       
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         content_length = int(self.headers["Content-Length"])
@@ -111,6 +145,8 @@ class handler(BaseHTTPRequestHandler):
                 return
             #for h2 in soup.find_all("h2"):
                 #del h2["id"]
+            for script in soup.find_all("script"):
+                script.decompose()
             for element in soup.find_all(["figure", "table", "img", "svg", "form", "checkbox", "input", "button", "hr"]):
                 element.decompose()
             for element in soup.find_all(class_=["mw-editsection", "portalbox", "side-box", "portal-bar", "thumb", "navbox", "side-box-flex", "barbox", "gallery", "sister-bar", "mw-empty-elt", "noprint"]):
@@ -154,6 +190,6 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(minify(fixed, minify_js=True, minify_css=True).encode("utf-8"))
             return
             
-server_address = ("127.0.0.1", 9827)
-httpd = ThreadingHTTPServer(server_address, handler)
-httpd.serve_forever()
+log("ready in " + str(round(time.time() - started, 2)) + "s")
+log("listening on http://localhost:9827")
+ThreadingHTTPServer(("127.0.0.1", 9827), handler).serve_forever()

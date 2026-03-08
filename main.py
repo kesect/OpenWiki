@@ -54,6 +54,8 @@ log("queried " + str(m) + " wikipedia servers of which " + str(c) + " responded"
 
        
 class handler(BaseHTTPRequestHandler):
+    def log_message(*args):
+        return
     def do_POST(self):
         content_length = int(self.headers["Content-Length"])
         post_data = self.rfile.read(content_length)
@@ -75,7 +77,7 @@ class handler(BaseHTTPRequestHandler):
                 if alang in languages:
                     lang = alang
                     break
-        if self.path == "/search":
+        if self.path == "/search?y":
             data = requests.get("https://" + lang + ".wikipedia.org/w/api.php?action=query&format=json&list=random&rnlimit=1&rnnamespace=0", headers={"User-Agent": "OpenWiki (" + unique + ")"}).json()
             if data.get("error"):
                 self.send_response(404)
@@ -85,7 +87,7 @@ class handler(BaseHTTPRequestHandler):
             self.send_header("Location", quote(data["query"]["random"][0]["title"]))
             self.end_headers()
             return
-        if self.path.startswith("/search"):
+        if self.path.startswith("/search?q="):
             query = quote(urlparse(self.path).query[2:])
             data = requests.get("https://" + lang + ".wikipedia.org/w/rest.php/v1/search/title?q=" + query + "&limit=3", headers={"User-Agent": "OpenWiki (" + unique + ")"})
             self.send_response(data.status_code)
@@ -172,7 +174,7 @@ class handler(BaseHTTPRequestHandler):
             thestuff = ""
             for h2 in soup.find_all("h2", id=True):   
                 #fixed = fixed.replace("<h2>" + h2.get_text() + "</h2>", '<h2 id="' + match.replace(" ", "-").lower() + '">' + match + "</h2>")
-                thestuff = thestuff + '<a style="color:white;filter:brightness(0.9);font-size:0.9rem" href="#' + h2["id"] + '">' + h2.get_text() + '</a>'
+                thestuff = thestuff + '<a style="color:#878788;filter:brightness(0.9);font-size:0.9rem" class="sidebarm" href="#' + h2["id"] + '">' + h2.get_text() + '</a>'
             wiki2 = wiki.replace("TITLE_WIKI_PAGE", html.escape(title)) # title on sidebar for contents
             fixed = wiki2.replace("<!-- CONTENTS -->", fixed) # the description
             fixed = fixed.replace("<!-- SIDEBAR -->", thestuff)

@@ -3,7 +3,7 @@
 **OpenWiki** is a lightweight, open source alternative frontend for [Wikipedia](https://wikipedia.org) designed to evade censorship. There is no tracking or cookies and Javascript is not required.
 
 > [!WARNING]
-> You should put OpenWiki behind a reverse proxy (such as nginx, apache, etc) on a obscene path.
+> You should put OpenWiki behind a reverse proxy (such as nginx, apache, etc) on a obscene path. (if you plan to use it to bypass firewalls)
  
 ## Installation
 ```
